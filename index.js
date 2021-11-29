@@ -18,7 +18,7 @@ async function run() {
     try {
         await client.connect();
         const db = client.db('genius-calculator');
-        const resultsCollection = db.collection('results-demo');
+        const resultsCollection = db.collection('results');
 
         app.get('/results', async (req, res) => {
             const cursor = resultsCollection.find({});
