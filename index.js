@@ -39,40 +39,6 @@ async function run() {
             res.send(results[0]);
         });
 
-        app.post('/results', async (req, res) => {
-
-            console.log({ title: req.body.title, result: req.body.result, input: req.body.input });
-
-            const result = await inserResult({ title: req.body.title, result: req.body.result, input: req.body.input })
-
-            res.json(result)
-        });
-        app.put('/results', async (req, res) => {
-            const cursor = resultsCollection.find({});
-            const results = await cursor.toArray();
-            let result;
-            const filter = { _id: results[0]._id };
-            const updateDoc = { $set: { allResults: req.body.results } };
-            result = await resultsCollection.updateOne(filter, updateDoc);
-            res.json(result)
-        });
-
-        async function inserResult(data) {
-            const cursor = resultsCollection.find({});
-            const results = await cursor.toArray();
-            let result;
-
-            if (results.length > 0) {
-                const filter = { _id: results[0]._id };
-                const updateDoc = { $set: { allResults: [...results[0].allResults, data] } };
-                result = await resultsCollection.updateOne(filter, updateDoc);
-            }
-            else
-                result = await resultsCollection.insertOne({ allResults: [data] });
-
-            return await resultsCollection.find({}).toArray();
-        }
-
         io.on('connection', (socket) => {
             socket.emit('connection', null);
 
@@ -81,7 +47,6 @@ async function run() {
                 let calculatedResult = !!((calculateInput(data.input)) % 1) ?
                     calculateInput(data.input).toPrecision(3) : calculateInput(data.input);
 
-                console.log({ title: data.title, result: calculatedResult, input: data.input });
                 const cursor = resultsCollection.find({});
                 const results = await cursor.toArray();
                 let result;
