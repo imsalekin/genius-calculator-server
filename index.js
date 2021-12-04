@@ -44,33 +44,38 @@ async function run() {
 
             socket.on('calculate', async (data) => {
                 //if result is fraction value then set precision on it
-                let calculatedResult = !!((calculateInput(data.input)) % 1) ?
-                    calculateInput(data.input).toPrecision(3) : calculateInput(data.input);
+                try {
+                    let calculatedResult = ((calculateInput(data.input)) % 1) ?
+                        calculateInput(data.input).toPrecision(3) : calculateInput(data.input);
 
-                const cursor = resultsCollection.find({});
-                const results = await cursor.toArray();
-                let result;
+                    const cursor = resultsCollection.find({});
+                    const results = await cursor.toArray();
+                    let result;
 
-                if (results.length > 0) {
-                    const filter = { _id: results[0]._id };
-                    const updateDoc = {
-                        $set: {
-                            allResults: [...results[0].allResults,
-                            { title: data.title, result: calculatedResult, input: data.input }
-                            ]
-                        }
-                    };
-                    result = await resultsCollection.updateOne(filter, updateDoc);
+                    if (results.length > 0) {
+                        const filter = { _id: results[0]._id };
+                        const updateDoc = {
+                            $set: {
+                                allResults: [...results[0].allResults,
+                                { title: data.title, result: calculatedResult, input: data.input }
+                                ]
+                            }
+                        };
+                        result = await resultsCollection.updateOne(filter, updateDoc);
+                    }
+                    else {
+                        result = await resultsCollection.insertOne({
+                            allResults:
+                                [{ title: data.title, result: calculatedResult, input: data.input }]
+                        });
+                    }
+                    setTimeout(function () {
+                        io.emit('result', { status: 'ok', result: { title: data.title, result: calculatedResult, input: data.input } });
+                    }, 15000);
                 }
-                else {
-                    result = await resultsCollection.insertOne({
-                        allResults:
-                            [{ title: data.title, result: calculatedResult, input: data.input }]
-                    });
-
+                catch {
+                    io.emit('result', { status: 'error', result: { error: 'Invalid Expression' } })
                 }
-
-                io.emit('result', { title: data.title, result: calculatedResult, input: data.input });
             });
 
             socket.on('updateResults', async (data) => {
